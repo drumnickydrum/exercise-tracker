@@ -1,17 +1,17 @@
 const mongoose = require('mongoose');
-const AutoIncrement = require('mongoose-sequence')(mongoose);
+// const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const User = new mongoose.Schema({
   username: String,
-  count: Number,
+  count: { type: Number, default: 0 },
   log: [
     {
       description: String,
       duration: Number,
-      date: Date,
+      date: String,
     },
   ],
 });
-User.plugin(AutoIncrement, { inc_field: 'count' });
+// User.plugin(AutoIncrement, { inc_field: 'count' });
 
 module.exports = mongoose.model('user', User);
