@@ -51,6 +51,12 @@ app.get('/api/exercise/users/', (req, res) => {
 });
 
 app.post('/api/exercise/add/', (req, res) => {
+  const options = {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numberic',
+  };
   let { userId, description, duration, date } = req.body;
   // check for required fields
   if (!userId || !description || !duration)
@@ -59,12 +65,6 @@ app.post('/api/exercise/add/', (req, res) => {
   if (isNaN(duration)) return res.send('duration must be a number in mins');
   // if no date, provide current date
   if (!date) {
-    const options = {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numberic',
-    };
     date = new Date().toDateString(options);
   }
   const newLog = { description, duration, date };
@@ -74,13 +74,14 @@ app.post('/api/exercise/add/', (req, res) => {
       user.log.push(newLog);
       user.count = user.log.length;
       // update db
-      user.save().then(({ username }) => {
+      user.save().then(({ _id, username }) => {
+        date = new Date(date).toDateString(options);
         return res.json({
-          _id: userId,
+          _id,
           username,
-          date,
-          duration: parseInt(duration),
           description,
+          duration: parseInt(duration),
+          date,
         });
       });
     })
@@ -88,9 +89,9 @@ app.post('/api/exercise/add/', (req, res) => {
     .catch((err) => res.send('invalid userId'));
 });
 
-app.get('/api/exercise/log/:userId/:from?/:to?/:limit?/', (req, res) => {
-  let { userId, from, to } = req.params;
-  const limit = parseInt(req.params.limit);
+app.get('/api/exercise/log', (req, res) => {
+  let { userId, from, to } = req.query;
+  const limit = parseInt(req.query.limit);
   const validDate = /^(\d{4}-\d{2}-\d{2})$/;
   if (from) {
     if (!from.match(validDate)) {
@@ -107,12 +108,10 @@ app.get('/api/exercise/log/:userId/:from?/:to?/:limit?/', (req, res) => {
     }
   }
   // find current user
-  // Person.find({favoriteFoods: foodToSearch}).sort({ name: 1}).limit(2).select({age: 0}).exec((err, data) => {
   User.findOne({ _id: userId })
     .then(({ _id, username, count, log }) => {
       const logTrimmed = [];
       log.some(({ description, duration, date }) => {
-        console.log(limit, logTrimmed.length);
         if (limit && logTrimmed.length === limit) return true;
         date = new Date(date);
         if ((!from || date >= from) && (!to || date <= to)) {
