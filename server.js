@@ -3,6 +3,17 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
+const User = require('./models/user.js');
+
+// connect to mongoDB Atlas database
+require('dotenv').config();
+mongoose.connect(
+  process.env.DB_URI,
+  { useUnifiedTopology: true, useNewUrlParser: true },
+  (req, res) => {
+    console.log('Connected to database');
+  }
+);
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
@@ -12,7 +23,12 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/exercise/new-user/', (req, res) => {
-  console.log('new-user: ', req.body);
+  const newUser = new User({
+    username: req.body.username,
+  });
+  const response = newUser.save().then((i) => i);
+  console.log(response);
+
   res.end();
 });
 
